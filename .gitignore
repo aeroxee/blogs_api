@@ -22,3 +22,5 @@ go.work
 
 # Media 
 /media/*
+
+blogs_api

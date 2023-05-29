@@ -3,7 +3,7 @@ package models
 import (
 	"log"
 
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -16,8 +16,7 @@ func init() {
 
 // GetDB configuration for connection to database.
 func GetDB() *gorm.DB {
-	dsn := "host=localhost port=5432 user=fajhri password=root dbname=blogs sslmode=disable TimeZone=Asia/Jakarta"
-	d, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	d, err := gorm.Open(sqlite.Open("blogs.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
