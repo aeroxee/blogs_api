@@ -245,14 +245,14 @@ func ArticleHandlerPUT(ctx *gin.Context) {
 
 	if newFile != "" {
 		article.Logo = newFile
-	}
 
-	if err := ctx.SaveUploadedFile(payloads.Logo, "."+newFile); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": err.Error(),
-		})
-		return
+		if err := ctx.SaveUploadedFile(payloads.Logo, "."+newFile); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": err.Error(),
+			})
+			return
+		}
 	}
 
 	models.GetDB().Save(&article)
