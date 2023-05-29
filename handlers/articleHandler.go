@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/aZ4ziL/blogs_api/models"
@@ -70,7 +71,7 @@ func ArticleHandlerPOST(ctx *gin.Context) {
 		return
 	}
 
-	slug := slug.MakeLang(payloads.Title, "id")
+	slugString := slug.MakeLang(payloads.Title, "id")
 
 	var tags []*models.Tag
 	tagSplit := strings.Split(payloads.Tags, ",")
@@ -95,7 +96,7 @@ func ArticleHandlerPOST(ctx *gin.Context) {
 		UserID:      payloads.UserID,
 		Tags:        tags,
 		Title:       payloads.Title,
-		Slug:        slug,
+		Slug:        slugString,
 		Description: payloads.Description,
 		Content:     payloads.Description,
 		Status:      payloads.Status,
@@ -110,7 +111,7 @@ func ArticleHandlerPOST(ctx *gin.Context) {
 		return
 	}
 
-	filename := fmt.Sprintf("/media/articles/%s/%s", slug, payloads.Logo.Filename)
+	filename := fmt.Sprintf("/media/articles/%s/%s", slugString, payloads.Logo.Filename)
 
 	if err := ctx.SaveUploadedFile(payloads.Logo, "."+filename); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -125,4 +126,121 @@ func ArticleHandlerPOST(ctx *gin.Context) {
 	models.GetDB().Save(&article)
 
 	ctx.JSON(http.StatusCreated, article)
+}
+
+// ArticleHandlerPUT is function handling request to edit article.
+func ArticleHandlerPUT(ctx *gin.Context) {
+	slugQuery := getQueryString(ctx.Request, "slug", "")
+	if slugQuery == "" {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"status":  "error",
+			"message": "Halaman yang anda tuju tidak dapat ditemukan.",
+		})
+		return
+	}
+
+	article, err := models.GetArticleBySlug(slugQuery)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"status":  "error",
+			"message": "Halaman yang anda tuju tidak dapat ditemukan.",
+		})
+		return
+	}
+
+	userContext := getUserFromContext(ctx.Request)
+	user, err := models.GetUserByID(userContext.Credential.UserID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Autentikasi diperlukan.",
+		})
+		return
+	}
+
+	// check is user is author for this article
+	if user.ID != article.UserID {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Anda tidak mempunyai ijin untuk mengakses metode ini.",
+		})
+		return
+	}
+
+	payloads := struct {
+		Tags        string                `form:"tags"`
+		Title       string                `form:"title" validate:"max=50"`
+		Logo        *multipart.FileHeader `form:"logo"`
+		Description string                `form:"description" validate:"max=255"`
+		Content     string                `form:"content"`
+		Status      string                `form:"status" validate:"max=9"`
+	}{}
+	if err := ctx.ShouldBindWith(&payloads, binding.FormMultipart); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Payload yang anda gunakan tidak di ijinkan.",
+		})
+		return
+	}
+
+	if payloads.Tags != "" {
+		var tags []*models.Tag
+		tagSplit := strings.Split(payloads.Tags, ",")
+		for _, tag := range tagSplit {
+			t, err := models.GetTagByTitle(tag)
+			if err != nil {
+				newTag := models.Tag{
+					Title: tag,
+				}
+				err := models.CreateNewTags(&newTag)
+				if err != nil {
+					continue
+				}
+				tags = append(tags, &newTag)
+				continue
+			}
+			tags = append(tags, &t)
+		}
+		article.Tags = tags
+	}
+	if payloads.Title != "" {
+		article.Title = payloads.Title
+		slugString := slug.MakeLang(payloads.Title, "id")
+		article.Slug = slugString
+	}
+
+	var newFile string
+	if payloads.Logo != nil {
+
+		oldFile := article.Logo
+		_ = os.RemoveAll("." + oldFile)
+
+		newFile = fmt.Sprintf("/media/articles/%s/%s", article.Slug, payloads.Logo.Filename)
+	}
+
+	if payloads.Description != "" {
+		article.Description = payloads.Description
+	}
+	if payloads.Content != "" {
+		article.Content = payloads.Content
+	}
+	if payloads.Status != "" {
+		article.Status = payloads.Status
+	}
+
+	if newFile != "" {
+		article.Logo = newFile
+	}
+
+	if err := ctx.SaveUploadedFile(payloads.Logo, "."+newFile); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	models.GetDB().Save(&article)
+
+	ctx.JSON(http.StatusOK, article)
 }
