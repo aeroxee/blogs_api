@@ -26,7 +26,7 @@ func ArticleHandlerGET(ctx *gin.Context) {
 	q := getQueryString(ctx.Request, "q", "")
 
 	if q != "" {
-		articles := models.GetArticleFilterBySlug(cases.Title(language.Indonesian).String(q))
+		articles := models.GetArticleFilterByTitle(cases.Title(language.Indonesian).String(q))
 		ctx.JSON(http.StatusOK, articles)
 		return
 	}
@@ -40,6 +40,11 @@ func ArticleHandlerGET(ctx *gin.Context) {
 			})
 			return
 		}
+
+		article.Views = article.Views + 1
+
+		models.GetDB().Save(&article)
+
 		ctx.JSON(http.StatusOK, article)
 		return
 	}
@@ -105,7 +110,7 @@ func ArticleHandlerPOST(ctx *gin.Context) {
 	article := models.Article{
 		UserID:      payloads.UserID,
 		Tags:        tags,
-		Title:       payloads.Title,
+		Title:       cases.Title(language.Indonesian).String(payloads.Title),
 		Slug:        slugString,
 		Description: payloads.Description,
 		Content:     payloads.Description,
@@ -214,7 +219,7 @@ func ArticleHandlerPUT(ctx *gin.Context) {
 		article.Tags = tags
 	}
 	if payloads.Title != "" {
-		article.Title = payloads.Title
+		article.Title = cases.Title(language.Indonesian).String(payloads.Title)
 		slugString := slug.MakeLang(payloads.Title, "id")
 		article.Slug = slugString
 	}
