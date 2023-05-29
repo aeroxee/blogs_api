@@ -39,7 +39,7 @@ func GetArticleBySlug(slug string) (Article, error) {
 	return article, err
 }
 
-// GetAllArticles is function to get all article.
+// GetAllArticles is function to get all article by filter.
 func GetAllArticles(offset, limit int, sorted, status string) []Article {
 	var articles []Article
 	db.Model(&Article{}).Offset(offset).Limit(limit).Preload("Tags").
