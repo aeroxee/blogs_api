@@ -43,3 +43,10 @@ func GetAllArticles(offset, limit int, sorted, status string) []Article {
 		Where("status = ?", status).Find(&articles)
 	return articles
 }
+
+// GetArticleFilterBySlug is function to get article by filtering title.
+func GetArticleFilterBySlug(slug string) []Article {
+	var articles []Article
+	db.Where("slug LIKE ?", "%"+slug+"%").Preload("Tags").Find(&articles)
+	return articles
+}

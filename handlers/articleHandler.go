@@ -12,6 +12,8 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/gosimple/slug"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // ArticleHandlerGET is function to handling request GET for article.
@@ -21,6 +23,13 @@ func ArticleHandlerGET(ctx *gin.Context) {
 	sorted := getQueryString(ctx.Request, "sorted", "desc")
 	slug := getQueryString(ctx.Request, "slug", "")
 	status := getQueryString(ctx.Request, "status", "PUBLISHED")
+	q := getQueryString(ctx.Request, "q", "")
+
+	if q != "" {
+		articles := models.GetArticleFilterBySlug(cases.Title(language.Indonesian).String(q))
+		ctx.JSON(http.StatusOK, articles)
+		return
+	}
 
 	if slug != "" {
 		article, err := models.GetArticleBySlug(slug)
