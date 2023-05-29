@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Article struct {
 	ID          int       `gorm:"primaryKey" json:"id"`
@@ -40,7 +43,7 @@ func GetArticleBySlug(slug string) (Article, error) {
 func GetAllArticles(offset, limit int, sorted, status string) []Article {
 	var articles []Article
 	db.Model(&Article{}).Offset(offset).Limit(limit).Preload("Tags").
-		Where("status = ?", status).Find(&articles)
+		Where("status = ?", status).Order(fmt.Sprintf("created_at %s", sorted)).Find(&articles)
 	return articles
 }
 
