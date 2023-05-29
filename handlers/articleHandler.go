@@ -20,6 +20,7 @@ func ArticleHandlerGET(ctx *gin.Context) {
 	limit := getQueryInt(ctx.Request, "limit", 10)
 	sorted := getQueryString(ctx.Request, "sorted", "desc")
 	slug := getQueryString(ctx.Request, "slug", "")
+	status := getQueryString(ctx.Request, "status", "PUBLISHED")
 
 	if slug != "" {
 		article, err := models.GetArticleBySlug(slug)
@@ -34,7 +35,7 @@ func ArticleHandlerGET(ctx *gin.Context) {
 		return
 	}
 
-	articles := models.GetAllArticles(offset, limit, sorted)
+	articles := models.GetAllArticles(offset, limit, sorted, status)
 	ctx.JSON(http.StatusOK, articles)
 }
 
