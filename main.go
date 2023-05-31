@@ -7,12 +7,15 @@ import (
 )
 
 func main() {
+	// gin.SetMode(gin.ReleaseMode)
+
 	r := gin.Default()
 	r.SetTrustedProxies([]string{"127.0.0.1"})
 
 	r.Static("/media", "./media")
 
 	userGroupNoAuth := r.Group("/user")
+	userGroupNoAuth.Use(middlewares.CORS())
 	controllers.UserControllerNoAuth(userGroupNoAuth)
 
 	userGroupWithAuth := r.Group("/user")

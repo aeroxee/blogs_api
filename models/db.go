@@ -5,6 +5,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var db *gorm.DB
@@ -16,7 +17,9 @@ func init() {
 
 // GetDB configuration for connection to database.
 func GetDB() *gorm.DB {
-	d, err := gorm.Open(sqlite.Open("blogs.db"), &gorm.Config{})
+	d, err := gorm.Open(sqlite.Open("blogs.db"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
