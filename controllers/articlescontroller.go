@@ -11,6 +11,5 @@ func ArticleControllerNoAuth(group *gin.RouterGroup) {
 
 func ArticleControllerWithAuth(group *gin.RouterGroup) {
 	group.POST("", handlers.ArticleHandlerPOST)
-	group.OPTIONS("", handlers.ArticleHandlerPOST)
 	group.PUT("", handlers.ArticleHandlerPUT)
 }

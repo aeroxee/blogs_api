@@ -7,10 +7,8 @@ import (
 
 func UserControllerNoAuth(group *gin.RouterGroup) {
 	group.POST("/get-token", handlers.UserHandlerGetToken)
-	group.OPTIONS("/get-token", handlers.UserHandlerGetToken)
 
 	group.POST("/register", handlers.UserHandlerRegister)
-	group.OPTIONS("/register", handlers.UserHandlerRegister)
 }
 
 func UserControllerWithAuth(group *gin.RouterGroup) {

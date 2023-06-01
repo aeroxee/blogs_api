@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/aZ4ziL/blogs_api/controllers"
 	"github.com/aZ4ziL/blogs_api/middlewares"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,34 +15,35 @@ func main() {
 
 	r.Static("/media", "./media")
 
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"*"}
+	config.AddAllowMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+	config.AddAllowHeaders("Content-Type", "Authorization", "Accept", "Content-Disposition")
+
+	r.Use(cors.New(config))
+
 	userGroupNoAuth := r.Group("/user")
-	userGroupNoAuth.Use(middlewares.CORS())
 	controllers.UserControllerNoAuth(userGroupNoAuth)
 
 	userGroupWithAuth := r.Group("/user")
-	userGroupWithAuth.Use(middlewares.CORS())
 	userGroupWithAuth.Use(middlewares.Authentication())
 	controllers.UserControllerWithAuth(userGroupWithAuth)
 
 	// tag no auth
 	tagGroupNoAuth := r.Group("/tags")
-	tagGroupNoAuth.Use(middlewares.CORS())
 	controllers.TagControllerNoAuth(tagGroupNoAuth)
 
 	// tag with auth
 	tagGroupWithAuth := r.Group("/tags")
-	tagGroupWithAuth.Use(middlewares.CORS())
 	tagGroupWithAuth.Use(middlewares.Authentication())
 	controllers.TagControllerWithAuth(tagGroupWithAuth)
 
 	// article no auth
 	articleGroupNoAuth := r.Group("/articles")
-	articleGroupNoAuth.Use(middlewares.CORS())
 	controllers.ArticleControllerNoAuth(articleGroupNoAuth)
 
 	// article with auth
 	articleGroupWithAuth := r.Group("/articles")
-	articleGroupWithAuth.Use(middlewares.CORS())
 	articleGroupWithAuth.Use(middlewares.Authentication())
 	controllers.ArticleControllerWithAuth(articleGroupWithAuth)
 

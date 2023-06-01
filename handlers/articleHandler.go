@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aZ4ziL/blogs_api/auth"
 	"github.com/aZ4ziL/blogs_api/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -24,6 +25,34 @@ func ArticleHandlerGET(ctx *gin.Context) {
 	slug := getQueryString(ctx.Request, "slug", "")
 	status := getQueryString(ctx.Request, "status", "PUBLISHED")
 	q := getQueryString(ctx.Request, "q", "")
+	authorId := getQueryString(ctx.Request, "authorId", "")
+	token := getQueryString(ctx.Request, "token", "")
+
+	if authorId != "" && token != "" {
+		claims, err := auth.VerifyToken(token)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"status":  "error",
+				"message": "Autentikasi dibutuhkan.",
+			})
+			return
+		}
+		user, err := models.GetUserByID(claims.Credential.UserID)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"status":  "error",
+				"message": "Autentikasi dibutuhkan.",
+			})
+			return
+		}
+
+		var articlesByUser []models.Article
+		models.GetDB().Model(&models.Article{}).Where("user_id = ?", user.ID).
+			Limit(limit).Offset(offset).Order(fmt.Sprintf("created_at %s", sorted)).Preload("Tags").
+			Find(&articlesByUser)
+		ctx.JSON(http.StatusOK, articlesByUser)
+		return
+	}
 
 	if q != "" {
 		articles := models.GetArticleFilterByTitle(cases.Title(language.Indonesian).String(q))
@@ -55,6 +84,11 @@ func ArticleHandlerGET(ctx *gin.Context) {
 
 // ArticleHandlerPOST is function handler to handling request to create new user.
 func ArticleHandlerPOST(ctx *gin.Context) {
+	err := ctx.Request.ParseMultipartForm(1024)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	payloads := struct {
 		Tags        string                `form:"tags"`
 		UserID      int                   `form:"user_id" validate:"required"`
@@ -67,7 +101,7 @@ func ArticleHandlerPOST(ctx *gin.Context) {
 	if err := ctx.ShouldBindWith(&payloads, binding.FormMultipart); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
-			"message": "Payload yang anda gunakan tidak diijinkan.",
+			"message": err.Error(),
 		})
 		return
 	}

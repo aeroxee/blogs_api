@@ -11,5 +11,4 @@ func TagControllerNoAuth(group *gin.RouterGroup) {
 
 func TagControllerWithAuth(group *gin.RouterGroup) {
 	group.POST("", handlers.TagHandlerPOST)
-	group.OPTIONS("", handlers.TagHandlerPOST)
 }
